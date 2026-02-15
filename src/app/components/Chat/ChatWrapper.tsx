@@ -1,9 +1,8 @@
 "use client";
 
-import { forwardRef, useImperativeHandle } from "react";
-// @ts-ignore - This tells VS Code to ignore the "Cannot find module" error
-import { useChat } from "ai/react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import MessageList from "./Messages";
+import { useChat } from "@/hooks/useChat";
 
 interface ChatWrapperProps {
   withContext: boolean;
@@ -18,25 +17,34 @@ export interface ChatInterface {
 
 const ChatWrapper = forwardRef<ChatInterface, ChatWrapperProps>(
   ({ withContext, setContext, context }, ref) => {
-    
-    // We keep the logic the same, as the library is actually installed
-    const { messages, input, handleInputChange, handleSubmit }: any = useChat({
-      api: "http://127.0.0.1:8000/chat",
-      body: { withContext: withContext },
-    });
+
+    const { messages, sendMessage, isLoading } = useChat(1);
+    const [input, setInput] = useState("");
+
+    const handleSubmit = async (e: any) => {
+      e.preventDefault();
+      if (!input.trim()) return;
+
+      await sendMessage(input);
+      setInput("");
+    };
+
+    const handleInputChange = (e: any) => {
+      setInput(e.target.value);
+    };
 
     useImperativeHandle(ref, () => ({
-      handleMessageSubmit: (e: any) => handleSubmit(e),
-      handleInputUpdated: (e: any) => handleInputChange(e),
+      handleMessageSubmit: handleSubmit,
+      handleInputUpdated: handleInputChange,
     }));
 
     return (
       <div className="flex flex-col h-full overflow-hidden border-r border-gray-200 last:border-r-0">
         <div className="flex-grow overflow-y-auto p-4">
-          <MessageList 
-            messages={messages} 
-            withContext={withContext} 
-            context={context} 
+          <MessageList
+            messages={messages}
+            withContext={withContext}
+            context={context}
           />
         </div>
       </div>
